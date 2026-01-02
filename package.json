@@ -1,0 +1,11 @@
+{
+  "name": "vibeconnect-monorepo",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "concurrently \"npm --prefix server run server\" \"npm --prefix client run dev\""
+  },
+  "devDependencies": {
+    "concurrently": "^7.6.0"
+  }
+}
