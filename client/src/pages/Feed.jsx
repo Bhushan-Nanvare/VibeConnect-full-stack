@@ -4,7 +4,7 @@ import Loading from '../components/Loading'
 import StoriesBar from '../components/StoriesBar'
 import PostCard from '../components/PostCard'
 import Suggestions from '../components/Suggestions'
-import { useAuth } from '@clerk/clerk-react'
+import { useAuth } from '../context/AuthContext'
 import api from '../api/axios'
 import toast from 'react-hot-toast'
 

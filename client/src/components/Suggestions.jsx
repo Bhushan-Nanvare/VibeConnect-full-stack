@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { useAuth } from '@clerk/clerk-react'
+import { useAuth } from '../context/AuthContext'
 import api from '../api/axios'
 import { UserPlus } from 'lucide-react'
 import { useDispatch, useSelector } from 'react-redux'

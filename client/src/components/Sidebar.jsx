@@ -3,14 +3,14 @@ import { assets, dummyUserData } from '../assets/assets'
 import { Link, useNavigate } from 'react-router-dom'
 import MenuItems from './MenuItems'
 import { CirclePlus, LogOut } from 'lucide-react'
-import {UserButton, useClerk} from '@clerk/clerk-react'
+import { useAuth } from '../context/AuthContext'
 import { useSelector } from 'react-redux';
 
 const Sidebar = ({sidebarOpen, setSidebarOpen}) => {
 
     const navigate = useNavigate()
     const user = useSelector((state) => state.user.value)
-    const {signOut} = useClerk()
+    const {signOut} = useAuth()
 
   return (
     <div className={`w-60 xl:w-72 bg-white border-r border-gray-200 flex flex-col justify-between max-sm:absolute top-0 bottom-0 z-20 ${sidebarOpen ? 'translate-x-0' : 'max-sm:-translate-x-full'} transition-all duration-300 ease-in-out`}>
@@ -47,8 +47,8 @@ const Sidebar = ({sidebarOpen, setSidebarOpen}) => {
       </div>
 
         <div className='w-full border-t border-gray-200 p-4 px-7 flex items-center justify-between'>
-            <div className='flex gap-2 items-center cursor-pointer'>
-                <UserButton />
+            <div onClick={()=> navigate('/profile')} className='flex gap-2 items-center cursor-pointer'>
+                <img src={user.profile_picture} alt={user.full_name} className='w-8 h-8 rounded-full object-cover' />
                 <div>
                     <h1 className='text-sm font-medium'>{user.full_name}</h1>
                     <p className='text-xs text-gray-500'>@{user.username}</p>

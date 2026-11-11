@@ -4,34 +4,16 @@ import Connection from "../models/Connection.js"
 import Post from "../models/Post.js"
 import User from "../models/User.js"
 import fs from 'fs'
-import { clerkClient } from "@clerk/express";
 import { createInboxItem } from "./inboxController.js";
 
 
 // Get User Data using userId
 export const getUserData = async (req, res) => {
     try {
-        const { userId } = req.auth()
-        let user = await User.findById(userId)
+        const { userId } = req
+        const user = await User.findById(userId)
         if(!user){
-            // Fallback: Create user if not found (in case webhook didn't trigger)
-            const clerkUser = await clerkClient.users.getUser(userId)
-            let username = clerkUser.emailAddresses[0].emailAddress.split('@')[0]
-
-            // Check availability of username
-            const existingUser = await User.findOne({username})
-            if (existingUser) {
-                username = username + Math.floor(Math.random() * 10000)
-            }
-
-            const userData = {
-                _id: userId,
-                email: clerkUser.emailAddresses[0].emailAddress,
-                full_name: clerkUser.firstName + " " + clerkUser.lastName,
-                profile_picture: clerkUser.imageUrl,
-                username
-            }
-            user = await User.create(userData)
+            return res.status(401).json({success: false, message: "User not found"})
         }
         res.json({success: true, user})
     } catch (error) {
@@ -43,7 +25,7 @@ export const getUserData = async (req, res) => {
 //  Update User Data
 export const updateUserData = async (req, res) => {
     try {
-        const { userId } = req.auth()
+        const { userId } = req
         let {username, bio, location, full_name, interaction_style_badges, message_comfort_level, request_openness, energy_mode, energy_mode_expires_at } = req.body;
         
         // Parse interaction_style_badges if it's a string (from FormData)
@@ -100,9 +82,6 @@ export const updateUserData = async (req, res) => {
                 ]
             })
             updatedData.profile_picture = url;
-
-            const blob = await fetch(url).then(res => res.blob());
-            await clerkClient.users.updateUserProfileImage(userId, { file: blob });
         }
 
         if(cover){
@@ -136,7 +115,7 @@ export const updateUserData = async (req, res) => {
 // Find Users using username, email, location, name
 export const discoverUsers = async (req, res) => {
     try {
-        const { userId } = req.auth()
+        const { userId } = req
         const { input } = req.body;
 
         const allUsers = await User.find(
@@ -162,7 +141,7 @@ export const discoverUsers = async (req, res) => {
 // Follow User
 export const followUser = async (req, res) => {
     try {
-        const { userId } = req.auth()
+        const { userId } = req
         const { id } = req.body;
 
         const user = await User.findById(userId)
@@ -192,7 +171,7 @@ export const followUser = async (req, res) => {
 // Unfollow User
 export const unfollowUser = async (req, res) => {
     try {
-        const { userId } = req.auth()
+        const { userId } = req
         const { id } = req.body;
 
         const user = await User.findById(userId)
@@ -214,7 +193,7 @@ export const unfollowUser = async (req, res) => {
 // Send Connection Request
 export const sendConnectionRequest = async (req, res) => {
     try {
-        const {userId} = req.auth()
+        const {userId} = req
         const { id } = req.body;
 
         // Check if user has sent more than 20 connection requests in the last 24 hours
@@ -262,7 +241,7 @@ export const sendConnectionRequest = async (req, res) => {
 // Get User Connections
 export const getUserConnections = async (req, res) => {
     try {
-        const {userId} = req.auth()
+        const {userId} = req
         const user = await User.findById(userId).populate('connections followers following')
 
         const connections = user.connections
@@ -282,7 +261,7 @@ export const getUserConnections = async (req, res) => {
 // Accept Connection Request
 export const acceptConnectionRequest = async (req, res) => {
     try {
-        const {userId} = req.auth()
+        const {userId} = req
         const { id } = req.body;
 
         const connection = await Connection.findOne({from_user_id: id, to_user_id: userId})

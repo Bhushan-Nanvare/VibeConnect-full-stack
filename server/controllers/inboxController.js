@@ -6,7 +6,7 @@ import Connection from '../models/Connection.js';
 // Get user's inbox items
 export const getInboxItems = async (req, res) => {
     try {
-        const { userId } = req.auth();
+        const { userId } = req;
         
         // Get non-dismissed items, ordered by relevance (unread first, then by time)
         const inboxItems = await InboxItem.find({
@@ -39,7 +39,7 @@ export const getInboxItems = async (req, res) => {
 // Mark inbox item as read
 export const markInboxItemRead = async (req, res) => {
     try {
-        const { userId } = req.auth();
+        const { userId } = req;
         const { itemId } = req.params;
 
         const item = await InboxItem.findOne({ _id: itemId, user_id: userId });
@@ -59,7 +59,7 @@ export const markInboxItemRead = async (req, res) => {
 // Dismiss inbox item
 export const dismissInboxItem = async (req, res) => {
     try {
-        const { userId } = req.auth();
+        const { userId } = req;
         const { itemId } = req.params;
 
         const item = await InboxItem.findOne({ _id: itemId, user_id: userId });
@@ -79,7 +79,6 @@ export const dismissInboxItem = async (req, res) => {
 // Helper: Create inbox item (called from other controllers)
 export const createInboxItem = async (userId, itemType, referenceId, referenceType, actorId, metadata = {}) => {
     try {
-        // User._id is already a String (Clerk user ID), so use directly
         // Check if similar item already exists (avoid duplicates)
         const existing = await InboxItem.findOne({
             user_id: userId,

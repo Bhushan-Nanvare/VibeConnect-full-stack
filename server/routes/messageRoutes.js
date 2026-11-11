@@ -1,12 +1,13 @@
 import express from 'express';
-import { getChatMessages, sendMessage, sseController, updatePoll, updateChecklist, updateDecision, updateMessageState } from '../controllers/messageController.js';
+import { getChatMessages, getStreamToken, sendMessage, sseController, updatePoll, updateChecklist, updateDecision, updateMessageState } from '../controllers/messageController.js';
 import { upload } from '../configs/multer.js';
 import { protect } from '../middlewares/auth.js';
 
 
 const messageRouter = express.Router();
 
-messageRouter.get('/:userId', sseController)
+messageRouter.post('/stream-token', protect, getStreamToken)
+messageRouter.get('/stream', sseController)
 messageRouter.post('/send', upload.single('image'), protect, sendMessage)
 messageRouter.post('/get', protect, getChatMessages)
 messageRouter.put('/:messageId/poll', protect, updatePoll)

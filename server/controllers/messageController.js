@@ -1,13 +1,32 @@
 import fs from "fs";
+import crypto from "crypto";
 import imagekit from "../configs/imageKit.js";
+import redis, { subscriber } from "../configs/redis.js";
 import Message from "../models/Message.js";
 
 // Create an empty object to store SS Event connections
-const connections = {}; 
+const connections = {};
+
+// Every server instance listens for new messages and forwards them to its own connected users
+export const subscribeToMessages = () => subscriber.subscribe('messages', (data) => {
+    const message = JSON.parse(data)
+    connections[message.to_user_id]?.write(`data: ${data}\n\n`)
+})
+
+// EventSource can't send headers, so the client first gets a one-time ticket (valid 60s)
+export const getStreamToken = async (req, res) => {
+    const { userId } = req;
+    const token = crypto.randomBytes(32).toString('hex')
+    await redis.setEx(`stream:${token}`, 60, userId)
+    res.json({ success: true, token })
+}
 
 // Controller function for the SSE endpoint
-export const sseController = (req, res)=>{
-    const { userId } = req.params
+export const sseController = async (req, res)=>{
+    const userId = await redis.getDel(`stream:${req.query.token}`)
+    if(!userId){
+        return res.status(401).end()
+    }
     console.log('New client connected : ', userId)
 
     // Set SSE headers
@@ -33,7 +52,7 @@ export const sseController = (req, res)=>{
 // Send Message
 export const sendMessage = async (req, res) => {
     try {
-        const { userId } = req.auth();
+        const { userId } = req;
         const { to_user_id, text, message_type } = req.body;
         const image = req.file;
 
@@ -97,9 +116,7 @@ export const sendMessage = async (req, res) => {
         // Send message to to_user_id using SSE
         const messageWithUserData = await Message.findById(message._id).populate('from_user_id');
 
-        if(connections[to_user_id]){
-           connections[to_user_id].write(`data: ${JSON.stringify(messageWithUserData)}\n\n`)
-        }
+        await redis.publish('messages', JSON.stringify(messageWithUserData))
 
     } catch (error) {
         console.log(error);
@@ -110,7 +127,7 @@ export const sendMessage = async (req, res) => {
 // Get Chat Messages
 export const getChatMessages = async (req, res) => {
     try {
-        const { userId } = req.auth();
+        const { userId } = req;
         const { to_user_id } = req.body;
 
         const messages = await Message.find({
@@ -139,7 +156,7 @@ export const getChatMessages = async (req, res) => {
 
 export const getUserRecentMessages = async (req, res) => {
     try {
-        const { userId } = req.auth();
+        const { userId } = req;
         const messages = await Message.find({to_user_id: userId}).populate('from_user_id to_user_id').sort({ createdAt: -1 });
 
         res.json({ success: true, messages });
@@ -151,7 +168,7 @@ export const getUserRecentMessages = async (req, res) => {
 // Update Message State (Unread Without Guilt)
 export const updateMessageState = async (req, res) => {
     try {
-        const { userId } = req.auth();
+        const { userId } = req;
         const { messageId } = req.params;
         const { message_state } = req.body;
 
@@ -221,7 +238,7 @@ export const updateMessageState = async (req, res) => {
 // Update Poll
 export const updatePoll = async (req, res) => {
     try {
-        const { userId } = req.auth();
+        const { userId } = req;
         const { messageId } = req.params;
         const { poll_data } = req.body;
 
@@ -242,7 +259,7 @@ export const updatePoll = async (req, res) => {
 // Update Checklist
 export const updateChecklist = async (req, res) => {
     try {
-        const { userId } = req.auth();
+        const { userId } = req;
         const { messageId } = req.params;
         const { checklist_data } = req.body;
 
@@ -263,7 +280,7 @@ export const updateChecklist = async (req, res) => {
 // Update Decision
 export const updateDecision = async (req, res) => {
     try {
-        const { userId } = req.auth();
+        const { userId } = req;
         const { messageId } = req.params;
         const { decision_data } = req.body;
 

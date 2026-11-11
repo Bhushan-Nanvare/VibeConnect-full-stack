@@ -7,11 +7,16 @@ import User from './models/User.js';
 /**
  * Seed script to create inbox items for testing
  * 
- * IMPORTANT: Replace 'YOUR_USER_ID' with your actual Clerk user ID
- * You can find it in the browser console: window.Clerk.user.id
+ * Usage: node seed-inbox.js you@example.com
  */
 
-const YOUR_USER_ID = 'user_37cbK4GgDzS5yksojzaZkqXSR3e'; // Replace with your user ID
+const YOUR_EMAIL = process.argv[2];
+if (!YOUR_EMAIL) {
+  console.error('❌ Pass your account email: node seed-inbox.js you@example.com');
+  process.exit(1);
+}
+await connectDB();
+const YOUR_USER_ID = (await User.findOne({ email: YOUR_EMAIL.toLowerCase() }))?._id;
 
 const seedInbox = async () => {
   try {
@@ -19,7 +24,6 @@ const seedInbox = async () => {
     
     await connectDB();
     
-    // Find your user (User._id is the Clerk user ID)
     const yourUser = await User.findById(YOUR_USER_ID);
     if (!yourUser) {
       console.error('❌ Your user not found. Make sure seed-social-signals.js ran first.');

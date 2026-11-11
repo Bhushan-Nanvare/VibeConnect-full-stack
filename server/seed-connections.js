@@ -8,12 +8,20 @@ import Connection from './models/Connection.js';
 /**
  * This script creates connections and messages between your logged-in user and test users
  * 
- * IMPORTANT: Replace 'YOUR_USER_ID' with your actual Clerk user ID
- * You can find it in the browser console: window.Clerk.user.id
+ * Usage: node seed-connections.js you@example.com
  */
 
-// Replace this with your actual Clerk User ID
-const YOUR_USER_ID = 'user_37cbK4GgDzS5yksojzaZkqXSR3e'; // Change this!
+const YOUR_EMAIL = process.argv[2];
+if (!YOUR_EMAIL) {
+  console.error('❌ Pass your account email: node seed-connections.js you@example.com');
+  process.exit(1);
+}
+await connectDB();
+const YOUR_USER_ID = (await User.findOne({ email: YOUR_EMAIL.toLowerCase() }))?._id;
+if (!YOUR_USER_ID) {
+  console.error('❌ No account with that email. Sign up in the app first.');
+  process.exit(1);
+}
 
 const testUserIds = [
   'test_user_1',
@@ -79,17 +87,6 @@ const sampleMessages = [
 
 const createConnectionsAndMessages = async () => {
   try {
-    if (YOUR_USER_ID === 'YOUR_USER_ID') {
-      console.error('❌ ERROR: Please set YOUR_USER_ID in seed-connections.js');
-      console.log('');
-      console.log('📝 To find your user ID:');
-      console.log('   1. Log in to your app');
-      console.log('   2. Open browser console (F12)');
-      console.log('   3. Run: window.Clerk.user.id');
-      console.log('   4. Copy the ID and replace YOUR_USER_ID in this file');
-      process.exit(1);
-    }
-
     console.log('🌱 Starting connections and messages seed...');
     console.log(`👤 Your User ID: ${YOUR_USER_ID}`);
     

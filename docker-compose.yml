@@ -1,0 +1,74 @@
+# Run the whole app with one command:  docker compose up --build
+#   App           -> http://localhost:5173
+#   Backend API   -> http://localhost:4000
+#   Inngest UI    -> http://localhost:8288
+# Keys are read from the .env file next to this file (copy .env.example).
+
+name: vibeconnect
+
+services:
+  mongo:
+    image: mongo:7.0
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Local Inngest dev server: runs background jobs (emails, story cleanup, reminders)
+  inngest:
+    image: inngest/inngest:v1.49.0
+    command: inngest dev -u http://server:4000/api/inngest --no-discovery
+    restart: unless-stopped
+    ports:
+      - "8288:8288"
+
+  server:
+    build: ./server
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PORT: 4000
+      MONGO_URI: mongodb://mongo:27017/vibeconnect
+      REDIS_URL: redis://redis:6379
+      FRONTEND_URL: http://localhost:5173
+      INNGEST_DEV: "1"
+      INNGEST_BASE_URL: http://inngest:8288
+    ports:
+      - "4000:4000"
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      inngest:
+        condition: service_started
+
+  client:
+    build:
+      context: ./client
+      args:
+        VITE_BASEURL: http://localhost:4000
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - server
+
+volumes:
+  mongo-data:

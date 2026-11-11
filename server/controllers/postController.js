@@ -7,7 +7,7 @@ import { createInboxItem } from "./inboxController.js";
 // Add Post
 export const addPost = async (req, res) => {
     try {
-        const { userId } = req.auth();
+        const { userId } = req;
         const { content, post_type } = req.body;
         const images = req.files
 
@@ -52,7 +52,7 @@ export const addPost = async (req, res) => {
 // Get Posts
 export const getFeedPosts = async (req, res) =>{
     try {
-        const { userId } = req.auth()
+        const { userId } = req
         const user = await User.findById(userId)
 
         // User connections and followings 
@@ -69,7 +69,7 @@ export const getFeedPosts = async (req, res) =>{
 // Like Post
 export const likePost = async (req, res) =>{
     try {
-        const { userId } = req.auth()
+        const { userId } = req
         const { postId } = req.body;
 
         const post = await Post.findById(postId)

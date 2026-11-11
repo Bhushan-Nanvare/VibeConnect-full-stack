@@ -3,7 +3,7 @@ import moment from 'moment'
 import { useNavigate } from 'react-router-dom'
 import { UserPlus, MessageCircle, Heart, UserCheck, X } from 'lucide-react'
 import { useDispatch } from 'react-redux'
-import { useAuth } from '@clerk/clerk-react'
+import { useAuth } from '../context/AuthContext'
 import { dismissItem, markItemRead } from '../features/inbox/inboxSlice'
 import api from '../api/axios'
 

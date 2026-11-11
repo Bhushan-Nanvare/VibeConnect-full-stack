@@ -1,0 +1,48 @@
+# Render Blueprint for the backend (the frontend is hosted on Vercel).
+# Render dashboard -> New -> Blueprint -> pick this repo.
+# Every "sync: false" key is asked for once during setup (values stay in Render, not in git).
+services:
+  - type: web
+    name: vibeconnect-api
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: vibeconnect-redis
+          property: connectionString
+      - key: MONGO_URI # MongoDB Atlas connection string
+        sync: false
+      - key: FRONTEND_URL # your Vercel URL, e.g. https://vibeconnect.vercel.app
+        sync: false
+      - key: IMAGEKIT_PUBLIC_KEY
+        sync: false
+      - key: IMAGEKIT_PRIVATE_KEY
+        sync: false
+      - key: IMAGEKIT_URL_ENDPOINT
+        sync: false
+      - key: INNGEST_EVENT_KEY # from Inngest Cloud
+        sync: false
+      - key: INNGEST_SIGNING_KEY # from Inngest Cloud
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SENDER_EMAIL
+        sync: false
+
+  # Free Redis-compatible store for rate limits, short-lived tokens and chat Pub/Sub
+  - type: keyvalue
+    name: vibeconnect-redis
+    plan: free
+    ipAllowList: []

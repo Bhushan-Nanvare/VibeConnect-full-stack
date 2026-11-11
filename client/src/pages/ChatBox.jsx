@@ -3,7 +3,7 @@ import { dummyMessagesData, dummyUserData } from '../assets/assets'
 import { ImageIcon, SendHorizonal, Plus } from 'lucide-react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useParams } from 'react-router-dom'
-import { useAuth, useUser } from '@clerk/clerk-react'
+import { useAuth } from '../context/AuthContext'
 import api from '../api/axios'
 import { addMessage, fetchMessages, resetMessages, setMessages } from '../features/messages/messagesSlice'
 import toast from 'react-hot-toast'
@@ -26,7 +26,7 @@ const ChatBox = () => {
   const [user, setUser] = useState(null)
   const [showTools, setShowTools] = useState(false)
   const messagesEndRef = useRef(null)
-  const { user: currentUser } = useUser()
+  const currentUser = useSelector((state) => state.user.value)
 
   const connections = useSelector((state) => state.connections.connections)
 
@@ -193,16 +193,16 @@ const ChatBox = () => {
                 decision_data
               }
 
-              const isIncomingMessage = message.to_user_id === currentUser?.id
+              const isIncomingMessage = message.to_user_id === currentUser?._id
               
               return (
                 <div key={index} className={`flex flex-col ${!isIncomingMessage ? 'items-start' : 'items-end'}`}>
                   {message.message_type === 'poll' ? (
-                    <PollMessage message={messageWithData} currentUserId={currentUser?.id} />
+                    <PollMessage message={messageWithData} currentUserId={currentUser?._id} />
                   ) : message.message_type === 'checklist' ? (
-                    <ChecklistMessage message={messageWithData} currentUserId={currentUser?.id} />
+                    <ChecklistMessage message={messageWithData} currentUserId={currentUser?._id} />
                   ) : message.message_type === 'decision' ? (
-                    <QuickDecisionMessage message={messageWithData} currentUserId={currentUser?.id} />
+                    <QuickDecisionMessage message={messageWithData} currentUserId={currentUser?._id} />
                   ) : (
                     <div 
                       className={`p-2 text-sm max-w-sm bg-white text-slate-700 rounded-lg shadow relative ${!isIncomingMessage ? 'rounded-bl-none' : 'rounded-br-none'} ${isIncomingMessage ? 'cursor-pointer' : ''}`}

@@ -2,15 +2,27 @@ import mongoose from 'mongoose';
 import 'dotenv/config';
 import connectDB from './configs/db.js';
 import Message from './models/Message.js';
+import User from './models/User.js';
 
 /**
  * Seed script to add test messages with different message states
  * for testing "Unread Without Guilt" feature
  * 
  * Run after seed-connections.js
+ * Usage: node seed-unread-without-guilt.js you@example.com
  */
 
-const YOUR_USER_ID = 'user_37cbK4GgDzS5yksojzaZkqXSR3e'; // Replace with your user ID
+const YOUR_EMAIL = process.argv[2];
+if (!YOUR_EMAIL) {
+  console.error('❌ Pass your account email: node seed-unread-without-guilt.js you@example.com');
+  process.exit(1);
+}
+await connectDB();
+const YOUR_USER_ID = (await User.findOne({ email: YOUR_EMAIL.toLowerCase() }))?._id;
+if (!YOUR_USER_ID) {
+  console.error('❌ No account with that email. Sign up in the app first.');
+  process.exit(1);
+}
 
 const testUserIds = [
   'test_user_1',

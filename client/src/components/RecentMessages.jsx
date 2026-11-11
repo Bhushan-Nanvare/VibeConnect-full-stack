@@ -2,15 +2,14 @@ import React, { useEffect, useState } from 'react'
 import { dummyRecentMessagesData } from '../assets/assets'
 import { Link } from 'react-router-dom'
 import moment from 'moment'
-import { useAuth, useUser } from '@clerk/clerk-react'
+import { useAuth } from '../context/AuthContext'
 import api from '../api/axios'
 import toast from 'react-hot-toast'
 
 const RecentMessages = () => {
 
     const [messages, setMessages] = useState([])
-    const {user} = useUser()
-    const {getToken} = useAuth()
+    const {getToken, isSignedIn} = useAuth()
 
     const fetchRecentMessages = async () => {
         try {
@@ -41,13 +40,13 @@ const RecentMessages = () => {
     }
 
     useEffect(()=>{
-        if(user){
+        if(isSignedIn){
             fetchRecentMessages()
-            setInterval(fetchRecentMessages, 30000)
-            return ()=> {clearInterval()}
+            const interval = setInterval(fetchRecentMessages, 30000)
+            return ()=> clearInterval(interval)
         }
-        
-    },[user])
+
+    },[isSignedIn])
 
   return (
     <div className='bg-white max-w-xs mt-4 p-4 min-h-20 rounded-md shadow text-xs text-slate-800'>

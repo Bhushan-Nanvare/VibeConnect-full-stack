@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { CheckSquare, Square } from 'lucide-react'
-import { useAuth } from '@clerk/clerk-react'
+import { useAuth } from '../context/AuthContext'
 import api from '../api/axios'
 import toast from 'react-hot-toast'
 

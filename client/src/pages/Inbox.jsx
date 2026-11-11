@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
-import { useAuth } from '@clerk/clerk-react'
+import { useAuth } from '../context/AuthContext'
 import { fetchInboxItems } from '../features/inbox/inboxSlice'
 import InboxItem from '../components/InboxItem'
 import Loading from '../components/Loading'

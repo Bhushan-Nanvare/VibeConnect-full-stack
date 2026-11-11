@@ -1,9 +1,47 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { assets } from '../assets/assets'
-import { SignIn } from '@clerk/clerk-react'
 import { ChevronDown } from 'lucide-react'
+import toast from 'react-hot-toast'
+import api from '../api/axios'
+import { useAuth } from '../context/AuthContext'
+
+const content = {
+  login: { title: 'Welcome back', subtitle: 'Sign in to continue to VibeConnect', button: 'Sign in', endpoint: 'login' },
+  register: { title: 'Create your account', subtitle: 'Join VibeConnect in a few seconds', button: 'Sign up', endpoint: 'register' },
+  forgot: { title: 'Forgot password?', subtitle: "Enter your email and we'll send you a reset link", button: 'Send reset link', endpoint: 'forgot-password' },
+}
+
+const inputClass = 'w-full px-4 py-2.5 border border-gray-300 rounded-lg outline-none focus:border-indigo-500 transition'
 
 const Login = () => {
+  const { signIn } = useAuth()
+  const [mode, setMode] = useState('login')
+  const [form, setForm] = useState({ full_name: '', email: '', password: '' })
+  const [loading, setLoading] = useState(false)
+
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    try {
+      const { data } = await api.post(`/api/auth/${content[mode].endpoint}`, form)
+      if (data.success) {
+        if (data.token) {
+          signIn(data.token)
+        } else {
+          toast.success(data.message)
+          setMode('login')
+        }
+      } else {
+        toast.error(data.message)
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || error.message)
+    }
+    setLoading(false)
+  }
+
   return (
     <div className='min-h-screen flex flex-col md:flex-row relative overflow-hidden bg-[#B8E6D3]'>
       {/* Background Pattern - Behind everything */}
@@ -71,9 +109,32 @@ const Login = () => {
           </div>
         </div>
 
-        {/* Clerk SignIn Component */}
         <div className='w-full max-w-md'>
-          <SignIn />
+          <h2 className='text-2xl font-bold text-gray-800 mb-1'>{content[mode].title}</h2>
+          <p className='text-sm text-gray-500 mb-6'>{content[mode].subtitle}</p>
+
+          <form onSubmit={handleSubmit} className='space-y-4'>
+            {mode === 'register' && (
+              <input name='full_name' value={form.full_name} onChange={handleChange} placeholder='Full name' className={inputClass} required />
+            )}
+            <input type='email' name='email' value={form.email} onChange={handleChange} placeholder='Email' className={inputClass} required />
+            {mode !== 'forgot' && (
+              <input type='password' name='password' value={form.password} onChange={handleChange} placeholder='Password' className={inputClass} required />
+            )}
+            {mode === 'login' && (
+              <p onClick={() => setMode('forgot')} className='text-right text-sm text-indigo-600 hover:underline cursor-pointer'>Forgot password?</p>
+            )}
+            <button disabled={loading} className='w-full py-2.5 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-700 hover:to-purple-800 active:scale-95 transition text-white cursor-pointer disabled:opacity-60'>
+              {loading ? 'Please wait...' : content[mode].button}
+            </button>
+          </form>
+
+          <p className='text-sm text-center text-gray-600 mt-6'>
+            {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
+            <span onClick={() => setMode(mode === 'login' ? 'register' : 'login')} className='text-indigo-600 font-medium hover:underline cursor-pointer'>
+              {mode === 'login' ? 'Sign up' : 'Sign in'}
+            </span>
+          </p>
         </div>
       </div>
     </div>

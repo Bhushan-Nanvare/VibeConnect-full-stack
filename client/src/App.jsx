@@ -9,7 +9,10 @@ import Discover from './pages/Discover'
 import Inbox from './pages/Inbox'
 import Profile from './pages/Profile'
 import CreatePost from './pages/CreatePost'
-import {useUser, useAuth} from '@clerk/clerk-react'
+import VerifyEmail from './pages/VerifyEmail'
+import ResetPassword from './pages/ResetPassword'
+import { useAuth } from './context/AuthContext'
+import api from './api/axios'
 import Layout from './pages/Layout'
 import toast, {Toaster} from 'react-hot-toast'
 import { useEffect } from 'react'
@@ -18,12 +21,10 @@ import { fetchUser } from './features/user/userSlice'
 import { fetchConnections } from './features/connections/connectionsSlice'
 import { addMessage } from './features/messages/messagesSlice'
 import Notification from './components/Notification'
-import { SignIn, SignUp } from "@clerk/clerk-react";
 
 
 const App = () => {
-  const {user} = useUser()
-  const {getToken } = useAuth()
+  const { isSignedIn, getToken } = useAuth()
   const {pathname} = useLocation()
   const pathnameRef = useRef(pathname)
 
@@ -31,40 +32,58 @@ const App = () => {
 
   useEffect(()=>{
     const fetchData = async () => {
-      if(user){
+      if(isSignedIn){
       const token = await getToken()
       dispatch(fetchUser(token))
       dispatch(fetchConnections(token))
       }
     }
     fetchData()
-    
-  },[user, getToken, dispatch])
+
+  },[isSignedIn, getToken, dispatch])
 
   useEffect(()=>{
     pathnameRef.current = pathname
   },[pathname])
 
   useEffect(()=>{
-    if(user){
-      const eventSource = new EventSource(import.meta.env.VITE_BASEURL + '/api/message/' + user.id);
+    if(!isSignedIn) return
+    let eventSource, retryTimer
 
-      eventSource.onmessage = (event)=>{
-        const message = JSON.parse(event.data)
+    // Get a one-time ticket, open the stream, and reconnect with a new ticket if it drops
+    const connect = async () => {
+      try {
+        const { data } = await api.post('/api/message/stream-token', {}, {
+          headers: { Authorization: `Bearer ${await getToken()}` }
+        })
+        eventSource = new EventSource(import.meta.env.VITE_BASEURL + '/api/message/stream?token=' + data.token);
 
-        if(pathnameRef.current === ('/messages/' + message.from_user_id._id)){
-          dispatch(addMessage(message))
-        }else{
-          toast.custom((t)=>(
-            <Notification t={t} message={message}/>
-          ), {position: "bottom-right"})
+        eventSource.onmessage = (event)=>{
+          const message = JSON.parse(event.data)
+
+          if(pathnameRef.current === ('/messages/' + message.from_user_id._id)){
+            dispatch(addMessage(message))
+          }else{
+            toast.custom((t)=>(
+              <Notification t={t} message={message}/>
+            ), {position: "bottom-right"})
+          }
         }
-      }
-      return ()=>{
-        eventSource.close()
+        eventSource.onerror = ()=>{
+          eventSource.close()
+          retryTimer = setTimeout(connect, 5000)
+        }
+      } catch {
+        retryTimer = setTimeout(connect, 5000)
       }
     }
-  },[user, dispatch])
+    connect()
+
+    return ()=>{
+      clearTimeout(retryTimer)
+      eventSource?.close()
+    }
+  },[isSignedIn, getToken, dispatch])
   
   return (
     <>
@@ -74,11 +93,10 @@ const App = () => {
 
   <Routes>
     
-    <Route path="/sign-in" element={<SignIn />} />
-    <Route path="/sign-up" element={<SignUp />} />
+    <Route path="/verify-email/:token" element={<VerifyEmail />} />
+    <Route path="/reset-password/:token" element={<ResetPassword />} />
 
-    
-    <Route path="/" element={!user ? <Login /> : <Layout />}>
+    <Route path="/" element={!isSignedIn ? <Login /> : <Layout />}>
       <Route index element={<Feed />} />
       <Route path="messages" element={<Messages />} />
       <Route path="messages/:userId" element={<ChatBox />} />

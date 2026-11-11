@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth, useUser } from '@clerk/clerk-react'
+import { useAuth } from '../context/AuthContext'
 import api from '../api/axios'
 import toast from 'react-hot-toast'
 import moment from 'moment'
@@ -10,8 +10,7 @@ import Loading from '../components/Loading'
 const Messages = () => {
   const [messages, setMessages] = useState([])
   const [loading, setLoading] = useState(true)
-  const { user } = useUser()
-  const { getToken } = useAuth()
+  const { getToken, isSignedIn } = useAuth()
   const navigate = useNavigate()
 
   const fetchRecentMessages = async () => {
@@ -52,12 +51,12 @@ const Messages = () => {
   }
 
   useEffect(() => {
-    if (user) {
+    if (isSignedIn) {
       fetchRecentMessages()
       const interval = setInterval(fetchRecentMessages, 30000)
       return () => clearInterval(interval)
     }
-  }, [user])
+  }, [isSignedIn])
 
   return !loading ? (
     <div className='h-full overflow-y-scroll no-scrollbar py-6 px-4'>

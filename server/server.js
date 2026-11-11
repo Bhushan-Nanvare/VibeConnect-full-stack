@@ -4,16 +4,19 @@ import 'dotenv/config';
 import connectDB from './configs/db.js';
 import {inngest, functions} from './inngest/index.js'
 import {serve} from 'inngest/express'
-import { clerkMiddleware } from '@clerk/express'
+import authRouter from './routes/authRoutes.js';
 import userRouter from './routes/userRotes.js';
 import postRouter from './routes/postRoutes.js';
 import storyRouter from './routes/storyRoutes.js';
 import messageRouter from './routes/messageRoutes.js';
 import inboxRouter from './routes/inboxRoutes.js';
+import { subscribeToMessages } from './controllers/messageController.js';
 
 const app = express();
+app.set('trust proxy', 1);
 
 await connectDB();
+await subscribeToMessages();
 
 // Debug: ensure ImageKit env vars are loaded
 console.log('IMAGEKIT_PUBLIC_KEY loaded:', !!process.env.IMAGEKIT_PUBLIC_KEY);
@@ -22,10 +25,10 @@ console.log('IMAGEKIT_URL_ENDPOINT loaded:', !!process.env.IMAGEKIT_URL_ENDPOINT
 
 app.use(express.json());
 app.use(cors());
-app.use(clerkMiddleware());
 
 app.get('/', (req, res)=> res.send('Server is running'))
 app.use('/api/inngest', serve({ client: inngest, functions }))
+app.use('/api/auth', authRouter)
 app.use('/api/user', userRouter)
 app.use('/api/post', postRouter)
 app.use('/api/story', storyRouter)

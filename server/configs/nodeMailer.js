@@ -11,6 +11,11 @@ const transporter = nodemailer.createTransport({
 });
 
 const sendEmail = async ({to, subject, body}) => {
+    // Without SMTP keys (local dev), print the email instead of sending it
+    if(!process.env.SMTP_USER){
+        console.log(`\n--- Email to ${to}: ${subject} ---\n${body}\n`)
+        return
+    }
     const response = await transporter.sendMail({
         from: process.env.SENDER_EMAIL,
         to,
